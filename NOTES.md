@@ -1,3 +1,5 @@
+> **关于版本号**：下面保留了开发过程中的内部编号（v3.x）。公开发布的版本号已重新编为 1.0，
+> 功能对应内部编号 v3.8 + 本轮清理。本文中的具体模型 slug 与区域名已替换为占位符。
 # ChatGPT Route Inspector — 诊断与交接记录
 
 ## ★ 根本原因（2026-09-29 实测确认）
@@ -16,7 +18,7 @@
 4. 把 `#config.enabled` 改回 `true` 并重启 Edge 后，**用户脚本立刻开始执行**：
    真实 `chatgpt.com` 页面上 `window.__RI__` 存在、`#ri-panel` 在 DOM 里、
    `fetch` 被接管、`targetHits=4`、并且读到了
-   `assistantModel = resolvedModel = gpt-5-6-thinking`。
+   `assistantModel = resolvedModel = <model-A>`。
 
 结论：此前"Userscript 不稳定执行 / 浮窗不稳定出现"**不是脚本的问题**，
 而是扩展级总开关被关掉了——此时每个脚本自身的 `enabled:true` 毫无作用。
@@ -32,11 +34,11 @@
 ```
 Route Inspector  v3.4
 CAPTURED  turn 3  @ 14:18:16
-  Request       gpt-5-6-thinking
-  Server STE    gpt-5.6-sol-wm
-  Assistant     gpt-5.6-sol-wm
-  Resolved      gpt-5-6-thinking
-  Region/Plan   japaneast / plus
+  Request       <model-A>
+  Server STE    <model-B>
+  Assistant     <model-B>
+  Resolved      <model-A>
+  Region/Plan   <region> / <plan>
 
 calls=120  hits=30  exact=3  other=27  streams=27  events=66  badJson=0
 src={"assistantModel":"2:/backend-api/f/conversation",
@@ -47,7 +49,7 @@ src={"assistantModel":"2:/backend-api/f/conversation",
      "planType":"2:/backend-api/f/conversation"}
 ```
 
-注意 `Request=gpt-5-6-thinking` 但 `Assistant/STE=gpt-5.6-sol-wm` —— 这正是用户
+注意 `Request=<model-A>` 但 `Assistant/STE=<model-B>` —— 这正是用户
 要找的那类信号：客户端申明的模型和服务端暴露的模型不是同一个 slug。
 （按约定，这只能说明"服务端向客户端暴露的路由 metadata 与请求不一致"，
 不能断言物理 GPU 上加载了哪套权重。）
@@ -150,11 +152,11 @@ src={"assistantModel":"2:/backend-api/f/conversation",
 ```
 ROUTE INSPECTOR  v3.1
 RUNNING   CAPTURED turn 3 @ 13:31:26
-Request      gpt-5-6-thinking
-Server STE   gpt-5-6-thinking
-Assistant    gpt-5-6-thinking
-Resolved     gpt-5-6-thinking-2026-09
-Region/Plan  japaneast / plus
+Request      <model-A>
+Server STE   <model-A>
+Assistant    <model-A>
+Resolved     <model-A-2026-09>
+Region/Plan  <region> / <plan>
 mounted=true  fetch=true  xhr=true  ctx=page
 calls=3  hits=3  streams=3  events=7  badJson=0
 err=(none)
