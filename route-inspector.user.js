@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ChatGPT Route Inspector
 // @namespace    local.chatgpt.inspector
-// @version      3.8
+// @version      1.0
 // @description  Live panel showing the model-routing metadata ChatGPT's server exposes to the client for /backend-api/f/conversation
 // @author       local
 // @match        https://chatgpt.com/*
@@ -39,7 +39,7 @@
 (function () {
     'use strict';
 
-    var VERSION = '3.8';
+    var VERSION = '1.0';
 
     // Page context. With @sandbox raw this IS the page window; with Tampermonkey's
     // default sandbox, unsafeWindow is the real page window. Either way the fetch
