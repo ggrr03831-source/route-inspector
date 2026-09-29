@@ -1,67 +1,82 @@
 # Route Inspector
 
-一个用户脚本，在 `chatgpt.com` 右下角实时显示**服务器向客户端暴露的模型路由元数据**。
+A userscript that shows, in the bottom-right corner of `chatgpt.com`, the **model-routing
+metadata the server exposes to the client** for the current turn.
 
-> **关于本项目**：由 AI 协作生成（人负责需求、验收与决策）。MIT 许可，不要求署名，不提供任何担保。觉得有用就拿去用，不必提谁做的。
+[中文说明](README.zh-CN.md)
 
-## 它显示什么
+## What it shows
 
-| 行 | 来源字段 | 含义 |
+| Row | Source field | Meaning |
 |---|---|---|
-| 请求模型 | 请求体的 `model` | 客户端实际提交的模型 |
-| 路由模型 | `server_ste_metadata.metadata.model_slug` | 服务端调度指派的内部模型 |
-| 回答模型 | `message.metadata.model_slug` | 生成这条回复的模型 |
-| 区域套餐 | `cluster_region` / `plan_type` | 例如 `japaneast / plus` |
+| Request model | request body `model` | the model the client actually submitted |
+| Routed model | `server_ste_metadata.metadata.model_slug` | the internal model the scheduler assigned |
+| Answering model | `message.metadata.model_slug` | the model that produced the reply |
+| Region / plan | `cluster_region` / `plan_type` | e.g. `us-east / plus` |
 
-灰色「等待中...」= 这一轮服务器**没有暴露**该字段（不猜、不推断）。
+A grey "waiting…" means the server did **not** expose that field for this turn. The script
+never guesses.
 
-## 它不显示什么
+## What it does not do
 
-- 不读取、不记录、不上传任何 prompt、回复正文或聊天记录
-- 不发起任何自己的网络请求
-- 不修改任何请求
+- It does not read, store, or upload your prompts, replies, or chat history.
+- It makes no network requests of its own.
+- It does not modify any request.
 
-它只从 `/backend-api/f/conversation` 这一条真实对话流里提取上面四个字段。
+It only pulls those four fields out of the one real turn stream at
+`/backend-api/f/conversation`.
 
-## 重要边界
+## Important boundary
 
-**这是"服务器向客户端暴露的路由 metadata 的忠实副本"，不是"某个型号的 GPU 上加载了哪套权重"的证明。**
+**This is a faithful copy of the routing metadata the server exposed to your browser — not
+proof of which weights a particular GPU loaded.**
 
-如果服务器在下发的 metadata 上写错了，本工具会忠实显示这个错误。它证明的是"服务端自称如此"，仅此而已。
+If the server reports something wrong, this tool will faithfully show that wrong value. All
+it demonstrates is what the server claims about itself.
 
-## 安装
+## Install
 
-1. 安装 [Tampermonkey](https://www.tampermonkey.net/)（Edge / Chrome 均可）
-2. 打开 `route-inspector.user.js`，Tampermonkey 会提示安装
-3. 打开 `https://chatgpt.com/`，发一条消息
+1. Install [Tampermonkey](https://www.tampermonkey.net/) (Edge or Chrome).
+2. Open `route-inspector.user.js`; Tampermonkey offers to install it.
+3. Open `https://chatgpt.com/` and send a message.
 
-面板默认隐藏，**发消息后才弹出**，不会挡住界面。标题栏可拖动，右上角 `—` 临时隐藏（下次提问重现），`×` 本次关闭（刷新页面恢复）。
+The panel is hidden by default and appears only once you send a message, so it never covers
+the interface. Drag it by the title bar; `—` hides it until your next message; `×` closes it
+until you reload the page.
 
-> 如果脚本不执行：先检查 Tampermonkey 的**全局开关**（右键工具栏图标，`Enabled` 不能是灰的）。这是最常见的"脚本没反应"原因。
+> If the script seems dead, check Tampermonkey's **global switch** first — right-click the
+> toolbar icon, and make sure `Enabled` is not greyed out. That is by far the most common
+> cause.
 
-## 准确度（基于 339 条实测快照）
+## Accuracy
 
-| 维度 | 结果 |
+Measured over 339 captured snapshots:
+
+| Dimension | Result |
 |---|---|
-| 解析正确性 | 339 条快照中 `parseErrors = 0`；SSE 分片、`[DONE]`、双重转义 JSON 均已覆盖 |
-| 字段召回 | 在 v3.4+ 上，所有被测页面均为 **5/5**（四项齐全）；旧版本偏低是脚本 bug 所致，非服务端不下发 |
-| 归属正确性 | v3.8 起，面板**只显示本轮自己响应流里的值**（`src` 可溯源）；v3.7 及以前旁路端点可能填充，已移除 |
+| Parsing | `parseErrors = 0`; chunked SSE, `[DONE]` markers and double-escaped JSON are all handled |
+| Field recall | On current builds every tested page reported 4/4 fields; lower numbers on earlier builds were script bugs, not missing server data |
+| Attribution | The panel only ever shows values that came from the current turn's own response stream |
 
-## 已知限制
+## Known limitations
 
-1. 依赖**未公开接口**（`/backend-api/f/conversation`）。OpenAI 若改动端点或载荷形状，需要更新。
-2. 失败时是**安全失败**：显示「等待中...」，不影响 ChatGPT 本身使用。
-3. 只覆盖 `chatgpt.com` 网页端。**桌面客户端 / CLI 走的是另一套传输（WebSocket）**，不在本工具范围内。
+1. It depends on an **undocumented endpoint** (`/backend-api/f/conversation`). If the path or
+   the payload shape changes, the script needs an update.
+2. It fails safe: it shows "waiting…" and leaves ChatGPT working normally.
+3. Web only. The **desktop app and CLI use a different transport (WebSocket)** and are out of
+   scope.
 
-## 自测
+## Self-test
 
 ```bash
 node --check route-inspector.user.js
-node test/ri-harness.mjs route-inspector.user.js   # 43 项断言，全部应 PASS
+node test/ri-harness.mjs route-inspector.user.js   # 43 assertions, all should PASS
 ```
 
-测试台在 Node 里构造迷你 DOM + 假流式 `Response`，直接运行**未经修改的正式脚本**，覆盖：面板契约、fetch/XHR 钩子、`res.clone()`、分片 SSE、多轮不串、旁路端点不污染、窗口控制。
+The harness builds a minimal DOM plus a fake streaming `Response` in Node and runs the
+**unmodified shipped file**, covering the panel contract, the fetch/XHR hooks, `res.clone()`,
+chunked SSE, multi-turn isolation, side-endpoint pollution and the window controls.
 
-## 许可
+## License
 
 MIT
